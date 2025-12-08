@@ -3,87 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bot Dashboard</title>
+    <title>GoldTask Bot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #f0f2f5);
-            --text-color: var(--tg-theme-text-color, #000000);
-            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
-            --btn-color: var(--tg-theme-button-color, #3390ec);
-            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --bg-color: #000000;
+            --card-bg: #111111;
+            --text-color: #ffffff;
+            --gold: #FFD700;
+            --gold-dim: #b89b00;
+            --gray: #888888;
         }
-        body { 
-            background: var(--bg-color); color: var(--text-color); 
-            font-family: sans-serif; margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; 
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0 0 80px 0; /* Padding for bottom nav */
+            -webkit-tap-highlight-color: transparent;
         }
+
+        /* --- Header --- */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: radial-gradient(circle at center, #332a00 0%, #000000 100%);
+            border-bottom: 1px solid #333;
+        }
+
+        .user-name { font-size: 1.2rem; color: var(--gold); margin-bottom: 5px; }
+        .balance-container { margin: 15px 0; }
+        .balance { font-size: 3rem; font-weight: 800; line-height: 1; }
+        .currency { font-size: 1rem; color: var(--gold); font-weight: 600; }
+
+        .verify-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .verify-btn:active { background: var(--gold); color: #000; }
+
+        /* --- Tabs --- */
+        .section { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Cards --- */
         .card {
-            background: var(--card-bg); width: 100%; max-width: 380px;
-            padding: 20px; border-radius: 12px; margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;
-            box-sizing: border-box;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #222;
         }
-        h2 { margin-top: 0; }
-        .btn {
-            background: var(--btn-color); color: var(--btn-text);
-            padding: 12px; border-radius: 8px; width: 100%;
-            border: none; font-size: 16px; font-weight: bold;
-            cursor: pointer; margin-top: 10px; display: block;
-            text-decoration: none; box-sizing: border-box;
+
+        .btn-action {
+            background-color: var(--gold);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
         }
-        .btn-outline {
-            background: transparent; border: 2px solid var(--btn-color);
-            color: var(--btn-color);
+        .btn-action:active { transform: scale(0.95); }
+
+        /* --- Withdrawal Specific --- */
+        .withdraw-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            border: 1px solid var(--gold);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .w-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--gold);
+            color: #000;
+            font-weight: 800;
+            font-size: 1rem;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .w-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .status-badge {
+            background: #222;
+            color: var(--gold);
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-top: 10px;
+            border: 1px solid #444;
+        }
+
+        /* --- Leaderboard --- */
+        .rank-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #222;
+            align-items: center;
+        }
+        .rank-num { width: 30px; font-weight: bold; color: var(--gray); }
+        .rank-1 .rank-num { color: var(--gold); font-size: 1.2rem; }
+
+        /* --- Bottom Nav --- */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #0a0a0a;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #222;
+            padding-bottom: 25px; /* iOS Safe Area */
+        }
+
+        .nav-item {
+            color: #555;
+            text-align: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item.active { color: var(--gold); }
+        .nav-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+        /* Loader */
+        #loader { 
+            position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            color: var(--gold); 
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2 id="uName">Loading...</h2>
-        <p>Your Balance: <b style="font-size: 20px;">0 Pts</b></p>
+    <div id="home" class="section active">
+        <div class="header">
+            <div id="uName" class="user-name">...</div>
+            <div class="balance-container">
+                <div class="balance" id="uBal">0</div>
+                <div class="currency">GOLD POINTS</div>
+            </div>
+            <button class="verify-btn" onclick="openChannel()">Join Channel</button>
+        </div>
+
+        <div class="withdraw-card">
+            <h3 style="margin:0 0 10px 0;">Withdrawal</h3>
+            <p style="color: #666; font-size: 0.9rem; margin:0;">Minimum: 10,000 Points</p>
+            
+            <div id="pendingMsg" style="display:none;">
+                <span class="status-badge">⏳ Processing Request...</span>
+            </div>
+
+            <button id="btnWithdraw" class="w-btn" onclick="requestWithdraw()" disabled>
+                Insufficient Balance
+            </button>
+        </div>
+
+        <div class="card" style="display:block;">
+            <div style="margin-bottom:10px; color:#aaa; font-size:0.9rem;">Your Invite Link</div>
+            <div style="background:#000; padding:10px; border-radius:8px; word-break:break-all; font-family:monospace; color:var(--gold); font-size:0.8rem;" id="refLink">
+                Generating...
+            </div>
+            <button class="btn-action" style="width:100%; margin-top:10px;" onclick="copyRef()">Copy Link</button>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>💰 Daily Bonus</h3>
-        <p>Visit our sponsor to unlock rewards.</p>
-        <button onclick="goAd()" class="btn">🚀 Claim Bonus</button>
+    <div id="tasks" class="section">
+        <h2 style="color:var(--gold)">Available Tasks</h2>
+        <div id="taskList"></div>
     </div>
 
-    <div class="card">
-        <h3>📢 Mandatory Task</h3>
-        <p>Join our channel to use the bot.</p>
-        <a id="joinLink" href="#" target="_blank" class="btn btn-outline">1. Join Channel</a>
-        <button onclick="verify()" class="btn">2. Verify & Earn Points</button>
+    <div id="leaderboard" class="section">
+        <h2 style="color:var(--gold)">Top 10 Leaders</h2>
+        <div id="lbList"></div>
+    </div>
+
+    <div id="loader">Syncing...</div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="switchTab('home', this)">
+            <span class="nav-icon">🏠</span>Home
+        </div>
+        <div class="nav-item" onclick="switchTab('tasks', this)">
+            <span class="nav-icon">📋</span>Tasks
+        </div>
+        <div class="nav-item" onclick="switchTab('leaderboard', this)">
+            <span class="nav-icon">🏆</span>Top
+        </div>
     </div>
 
     <script>
-        // CONFIG
-        const ADSTERRA_LINK = "https://www.google.com"; // PUT YOUR ADSTERRA LINK HERE
-        const CHANNEL_LINK = "https://t.me/TipStream"; // PUT YOUR CHANNEL LINK HERE
+        // ================= CONFIGURATION =================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwacgGvGHA8OfVSSwhbpEJ_ab2IpASJ9d66LtgeFV4xIQJ4uYlQRInxpPO-Id6rI7Hc/exec';
+        const CHANNEL_URL = 'https://t.me/TipStream'; 
+        const BOT_USERNAME = '@UjGroup_BOT'; // No @
+        // =================================================
 
         const tg = window.Telegram.WebApp;
         tg.expand();
+        const user = tg.initDataUnsafe.user;
 
-        // Setup User Info
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            document.getElementById('uName').innerText = tg.initDataUnsafe.user.first_name;
-        } else {
-            document.getElementById('uName').innerText = "Guest User";
+        let userBalance = 0;
+        let isPending = false;
+
+        async function init() {
+            if(!user) return;
+            
+            // Set Ref Link
+            document.getElementById('refLink').innerText = `https://t.me/${BOT_USERNAME}?start=${user.id}`;
+            
+            // Register & Load
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    source: 'webapp',
+                    action: 'register',
+                    id: user.id,
+                    first_name: user.first_name
+                })
+            });
+            
+            loadData();
         }
 
-        document.getElementById('joinLink').href = CHANNEL_LINK;
+        async function loadData() {
+            document.getElementById('loader').style.display = 'block';
+            
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getData&userId=${user.id}`);
+                const data = await res.json();
 
-        // ACTIONS
-        function goAd() {
-            tg.openLink(ADSTERRA_LINK);
+                // 1. Setup User
+                document.getElementById('uName').innerText = data.user.name;
+                document.getElementById('uBal').innerText = data.user.balance;
+                userBalance = parseInt(data.user.balance);
+                isPending = data.user.pending;
+                updateWithdrawUI();
+
+                // 2. Setup Tasks
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+                data.tasks.forEach(t => {
+                    taskList.innerHTML += `
+                        <div class="card">
+                            <div>
+                                <div style="font-weight:bold;">${t.desc}</div>
+                                <div style="color:var(--gold); font-size:0.9rem;">+${t.reward} PTS</div>
+                            </div>
+                            <button class="btn-action" onclick="doTask('${t.link}', '${t.id}', ${t.reward})">Go</button>
+                        </div>
+                    `;
+                });
+
+                // 3. Setup Leaderboard
+                const lbList = document.getElementById('lbList');
+                lbList.innerHTML = '';
+                data.leaderboard.forEach((u, i) => {
+                    lbList.innerHTML += `
+                        <div class="rank-row ${i===0?'rank-1':''}">
+                            <div style="display:flex; align-items:center;">
+                                <span class="rank-num">${i+1}</span>
+                                <span>${u.name}</span>
+                            </div>
+                            <span style="color:var(--gold)">${u.balance}</span>
+                        </div>
+                    `;
+                });
+
+            } catch(e) {
+                console.error(e);
+            }
+            document.getElementById('loader').style.display = 'none';
         }
 
-        function verify() {
-            // Sends data back to the Google Script Bot
-            tg.sendData("verify_channel_join");
+        // --- WITHDRAW LOGIC ---
+        function updateWithdrawUI() {
+            const btn = document.getElementById('btnWithdraw');
+            const msg = document.getElementById('pendingMsg');
+
+            if (isPending) {
+                btn.style.display = 'none';
+                msg.style.display = 'block';
+            } else {
+                btn.style.display = 'block';
+                msg.style.display = 'none';
+                
+                if (userBalance >= 10000) {
+                    btn.disabled = false;
+                    btn.innerText = "Request Withdrawal";
+                } else {
+                    btn.disabled = true;
+                    btn.innerText = `Need 10,000 (${userBalance}/10k)`;
+                }
+            }
         }
+
+        async function requestWithdraw() {
+            if(userBalance < 10000) return;
+            const ok = await tg.showConfirm(`Withdraw ${userBalance} points?`);
+            if(!ok) return;
+
+            const btn = document.getElementById('btnWithdraw');
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    source: 'webapp',
+                    action: 'withdraw',
+                    userId: user.id,
+                    name: user.first_name,
+                    amount: userBalance
+                })
+            });
+
+            isPending = true;
+            updateWithdrawUI();
+            tg.showAlert("Withdrawal requested! Admin will review.");
+        }
+
+        // --- TASK LOGIC ---
+        function doTask(link, taskId, reward) {
+            tg.openLink(link);
+            setTimeout(async () => {
+                const ok = await tg.showConfirm("Did you complete the task?");
+                if(ok) {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            source: 'webapp',
+                            action: 'completeTask',
+                            userId: user.id,
+                            reward: reward
+                        })
+                    });
+                    loadData(); // Refresh balance
+                    tg.showAlert("Points Added!");
+                }
+            }, 3000);
+        }
+
+        // --- UTILS ---
+        function switchTab(id, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function openChannel() { tg.openTelegramLink(CHANNEL_URL); }
+        function copyRef() { 
+            navigator.clipboard.writeText(document.getElementById('refLink').innerText);
+            tg.showAlert("Link Copied!");
+        }
+
+        init();
     </script>
 </body>
 </html>
