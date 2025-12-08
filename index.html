@@ -2,144 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rewards Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bot Dashboard</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* --- PROFESSIONAL THEME (Matches Telegram Dark/Light Mode) --- */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #000000);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f0f2f5);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --btn-color: var(--tg-theme-button-color, #3390ec);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
         }
-
+        body { 
+            background: var(--bg-color); color: var(--text-color); 
+            font-family: sans-serif; margin: 0; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
         .card {
-            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
-            border-radius: 12px;
-            padding: 20px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        h2, h3 { margin: 0 0 10px; }
-        p { margin: 5px 0; opacity: 0.8; }
-
-        .points-display {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--tg-theme-button-color, #3390ec);
-            margin: 10px 0;
-        }
-
-        /* --- BUTTONS --- */
-        .btn {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-            transition: opacity 0.2s;
-            text-decoration: none;
-            display: inline-block;
+            background: var(--card-bg); width: 100%; max-width: 380px;
+            padding: 20px; border-radius: 12px; margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;
             box-sizing: border-box;
         }
-
-        .btn:active { opacity: 0.8; }
+        h2 { margin-top: 0; }
+        .btn {
+            background: var(--btn-color); color: var(--btn-text);
+            padding: 12px; border-radius: 8px; width: 100%;
+            border: none; font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-top: 10px; display: block;
+            text-decoration: none; box-sizing: border-box;
+        }
         .btn-outline {
-            background-color: transparent;
-            border: 2px solid var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-color, #3390ec);
+            background: transparent; border: 2px solid var(--btn-color);
+            color: var(--btn-color);
         }
-
-        /* --- LEADERBOARD LIST --- */
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-        .list-item:last-child { border-bottom: none; }
-
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2 id="username">Guest</h2>
-        <p>Your Balance</p>
-        <div class="points-display">0 Pts</div>
-        <p style="font-size: 12px;">Refreshed just now</p>
+        <h2 id="uName">Loading...</h2>
+        <p>Your Balance: <b style="font-size: 20px;">0 Pts</b></p>
     </div>
 
     <div class="card">
-        <h3>💰 Earn Points</h3>
-        <p>Visit our sponsor to support the bot.</p>
-        <button onclick="openAd()" class="btn">🚀 Open Ad & Earn</button>
+        <h3>💰 Daily Bonus</h3>
+        <p>Visit our sponsor to unlock rewards.</p>
+        <button onclick="goAd()" class="btn">🚀 Claim Bonus</button>
     </div>
 
     <div class="card">
-        <h3>📢 Active Tasks</h3>
-        <p>Join our channel to verify your account.</p>
-        <a id="channelBtn" href="#" target="_blank" class="btn btn-outline">1. Join Channel</a>
-        <button onclick="verifyJoin()" class="btn">2. Verify & Get Reward</button>
-    </div>
-
-    <div class="card">
-        <h3>🏆 Top Users</h3>
-        <div id="leaderboard">
-            <div class="list-item"><span>1. Alex</span><span>1500 pts</span></div>
-            <div class="list-item"><span>2. Maria</span><span>1200 pts</span></div>
-            <div class="list-item"><span>3. John</span><span>950 pts</span></div>
-        </div>
+        <h3>📢 Mandatory Task</h3>
+        <p>Join our channel to use the bot.</p>
+        <a id="joinLink" href="#" target="_blank" class="btn btn-outline">1. Join Channel</a>
+        <button onclick="verify()" class="btn">2. Verify & Earn Points</button>
     </div>
 
     <script>
-        // 1. INITIALIZE TELEGRAM WEB APP
+        // CONFIG
+        const ADSTERRA_LINK = "https://www.google.com"; // PUT YOUR ADSTERRA LINK HERE
+        const CHANNEL_LINK = "https://t.me/TipStream"; // PUT YOUR CHANNEL LINK HERE
+
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Make it full screen
+        tg.expand();
 
-        // 2. CONFIGURATION
-        const ADSTERRA_LINK = "https://www.effectivegatecpm.com/raq9vg0n20?key=7f81c3bf1ee3041af7837ee61d0ad5e2"; // REPLACE WITH YOUR ADSTERRA DIRECT LINK
-        const CHANNEL_LINK = "https://t.me/TipStream"; // REPLACE WITH YOUR CHANNEL
-
-        // 3. SET USER DATA
-        // This gets the user's name from Telegram automatically
-        const user = tg.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('username').innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+        // Setup User Info
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('uName').innerText = tg.initDataUnsafe.user.first_name;
+        } else {
+            document.getElementById('uName').innerText = "Guest User";
         }
 
-        // Set Channel Link
-        document.getElementById('channelBtn').href = CHANNEL_LINK;
+        document.getElementById('joinLink').href = CHANNEL_LINK;
 
-        // 4. FUNCTIONS
-        function openAd() {
-            // Opens Adsterra link inside Telegram or external browser
-            tg.openLink(ADSTERRA_LINK); 
+        // ACTIONS
+        function goAd() {
+            tg.openLink(ADSTERRA_LINK);
         }
 
-        function verifyJoin() {
-            // Sends a signal back to the bot to check membership
-            tg.sendData("verify_channel_join"); 
-            // Optional: Close the web app after clicking
-            // tg.close(); 
+        function verify() {
+            // Sends data back to the Google Script Bot
+            tg.sendData("verify_channel_join");
         }
-
-        // Note: Real-time point fetching requires a more complex backend API. 
-        // For now, this is a UI template.
     </script>
 </body>
 </html>
