@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tap Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --bg: #000; --card: #1c1c1e; --text: #fff; --accent: #f7b928; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* HEADER */
+        .header { padding: 20px; text-align: center; background: radial-gradient(circle at center, #2c2c2e 0%, #000 100%); }
+        .balance-label { color: #888; font-size: 14px; }
+        .balance { font-size: 48px; font-weight: bold; margin: 5px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .coin-icon { width: 40px; height: 40px; }
+
+        /* TAP AREA */
+        .tap-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; }
+        .tap-btn { 
+            width: 250px; height: 250px; 
+            border-radius: 50%; 
+            background: radial-gradient(circle, #f7b928 0%, #d49608 100%);
+            border: 10px solid #332805;
+            box-shadow: 0 0 50px rgba(247, 185, 40, 0.3);
+            cursor: pointer; transition: transform 0.1s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .tap-btn:active { transform: scale(0.95); }
+        .tap-btn img { width: 150px; pointer-events: none; }
+
+        /* NAV BAR */
+        .nav { display: flex; background: var(--card); padding: 15px; border-radius: 20px 20px 0 0; justify-content: space-around; }
+        .nav-item { color: #888; text-align: center; font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 24px; display: block; margin-bottom: 5px; }
+
+        /* SECTIONS */
+        .section { display: none; padding: 20px; height: 100%; overflow-y: auto; }
+        .section.active { display: block; }
+        .card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        /* POPUP ANIMATION */
+        .float-text { position: absolute; color: white; font-weight: bold; font-size: 24px; pointer-events: none; animation: floatUp 1s ease-out forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+    </style>
+</head>
+<body>
+
+    <div id="home" class="section active" style="padding:0; display:flex; flex-direction:column;">
+        <div class="header">
+            <div class="balance-label">TOTAL BALANCE</div>
+            <div class="balance">
+                <img src="https://cdn-icons-png.flaticon.com/512/1292/1292744.png" class="coin-icon">
+                <span id="score">0</span>
+            </div>
+        </div>
+        <div class="tap-area">
+            <div class="tap-btn" id="tapBtn">
+                <img src="https://cdn-icons-png.flaticon.com/512/1292/1292744.png">
+            </div>
+        </div>
+    </div>
+
+    <div id="tasks" class="section">
+        <h2>Earn Coins</h2>
+        <div id="taskList">Loading tasks...</div>
+    </div>
+
+    <div id="leaderboard" class="section">
+        <h2>🏆 Top Holders</h2>
+        <div id="leaderboardList">Loading...</div>
+    </div>
+
+    <div id="friends" class="section">
+        <h2>Invite Friends</h2>
+        <div class="card">
+            <div>
+                <div style="color:#888">You earn</div>
+                <div style="font-weight:bold; color:var(--accent)">+1,000 Coins</div>
+            </div>
+        </div>
+        <button class="btn" style="width:100%; padding: 15px;" onclick="invite()">Invite a Friend</button>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="switchTab('home', this)"><span class="nav-icon">🪙</span>Tap</div>
+        <div class="nav-item" onclick="switchTab('tasks', this); loadTasks()"><span class="nav-icon">📋</span>Tasks</div>
+        <div class="nav-item" onclick="switchTab('friends', this)"><span class="nav-icon">🤝</span>Friends</div>
+        <div class="nav-item" onclick="switchTab('leaderboard', this); loadLeaderboard()"><span class="nav-icon">🏆</span>Rank</div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxTUD0gt4s-4DXfuIgaTaiDXDFMF-hcDVjIv1_plq9muamzScNC7PN-H5mKvu0wBBtC/exec"; 
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "12345";
+        let score = 0;
+
+        // LOAD DATA
+        fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "get_data", userId: userId }) })
+            .then(r => r.json())
+            .then(data => {
+                score = parseInt(data.balance);
+                document.getElementById('score').innerText = score.toLocaleString();
+            });
+
+        // TAP LOGIC
+        document.getElementById('tapBtn').addEventListener('click', (e) => {
+            score += 10;
+            document.getElementById('score').innerText = score.toLocaleString();
+            
+            // Floating Text Effect
+            let float = document.createElement("div");
+            float.className = "float-text";
+            float.innerText = "+10";
+            float.style.left = e.clientX + "px";
+            float.style.top = e.clientY + "px";
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1000);
+
+            // Sync with Server (Debounced in real app, simple here)
+            fetch(API_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify({ action: "tap", userId: userId, amount: 10 }) });
+        });
+
+        // TASKS LOGIC
+        function loadTasks() {
+            fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "get_data", userId: userId }) })
+                .then(r => r.json())
+                .then(data => {
+                    let html = "";
+                    data.tasks.forEach(t => {
+                        html += `
+                        <div class="card">
+                            <div>
+                                <div style="font-weight:bold">Join ${t[0]}</div>
+                                <div style="color:var(--accent)">+${t[2]} Coins</div>
+                            </div>
+                            <button class="btn" onclick="verifyTask('${t[0]}', ${t[2]}, '${t[1]}')">Start</button>
+                        </div>`;
+                    });
+                    document.getElementById('taskList').innerHTML = html;
+                });
+        }
+
+        function verifyTask(channelId, reward, link) {
+            tg.openTelegramLink(link);
+            setTimeout(() => {
+                if(confirm("Did you join? Click OK to verify.")) {
+                    fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "verify_task", userId: userId, channelId: channelId, reward: reward }) })
+                    .then(r => r.json())
+                    .then(res => {
+                        if(res.status === "success") {
+                            alert("✅ Verified! +"+reward);
+                            score = parseInt(res.newBalance);
+                            document.getElementById('score').innerText = score.toLocaleString();
+                        } else {
+                            alert("❌ Not joined yet!");
+                        }
+                    });
+                }
+            }, 4000);
+        }
+
+        // LEADERBOARD LOGIC
+        function loadLeaderboard() {
+            fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "leaderboard" }) })
+            .then(r => r.json())
+            .then(data => {
+                let html = "";
+                data.leaderboard.forEach((u, i) => {
+                    html += `<div class="card"><span>#${i+1} ${u.name}</span> <span style="color:var(--accent)">${u.score}</span></div>`;
+                });
+                document.getElementById('leaderboardList').innerHTML = html;
+            });
+        }
+
+        function invite() {
+            let link = `https://t.me/share/url?url=https://t.me/YOUR_BOT_USERNAME?start=${userId}&text=Join me and earn coins!`;
+            tg.openTelegramLink(link);
+        }
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.section').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            const activeSection = document.getElementById(tabId);
+            activeSection.classList.add('active');
+            
+            // Fix for display flex on home
+            if(tabId === 'home') activeSection.style.display = 'flex';
+            else activeSection.style.display = 'block';
+
+            if(element) element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
