@@ -11,16 +11,13 @@
         .gold { color: #FFD700; }
         .balance { font-size: 3rem; font-weight: bold; margin: 10px 0; }
         
-        /* Cards */
         .card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 15px; display: flex; justify-content: space-between; align-items: center; }
         .w-card { background: #1a1a1a; border: 1px solid #FFD700; border-radius: 12px; padding: 20px; margin: 15px; text-align: center; }
         
-        /* Buttons */
         .btn { background: #FFD700; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-w { width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px; }
         .btn:disabled { background: #333; color: #666; }
         
-        /* Nav */
         .nav { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
         .nav-item { color: #666; font-size: 0.8rem; text-align: center; }
         .nav-item.active { color: #FFD700; }
@@ -74,11 +71,11 @@
     </div>
 
     <script>
-        // --- EDIT THESE 3 LINES ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4HdaocKoLhGm8O13vOFunZlPcngzWbvB8IC78E2F65ISA1qn7BZfRcPtD2X-C6XCY/exec';
+        // --- EDIT THESE ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOwroDznuF4mrJZliVNxmC8RkzZBtYY56-IwPMmzPr0lSXz9_SulJ3ADNkj-DBucav/exec';
         const CHANNEL_URL = 'https://t.me/TipStream';
-        const BOT_NAME = 'UjGroup_BOT'; // No @ symbol
-        // ---------------------------
+        const BOT_NAME = 'UjGroup_BOT';
+        // ------------------
 
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -88,8 +85,6 @@
         async function init() {
             if(!user) return;
             document.getElementById('refLink').innerText = `https://t.me/${BOT_NAME}?start=${user.id}`;
-            
-            // Register
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ source:'webapp', action:'register', id:user.id, first_name:user.first_name })});
             loadData();
         }
@@ -99,12 +94,10 @@
             const res = await fetch(`${SCRIPT_URL}?action=getData&userId=${user.id}`);
             const data = await res.json();
             
-            // User Data
             document.getElementById('uName').innerText = data.user.name;
             document.getElementById('uBal').innerText = data.user.balance;
             balance = parseInt(data.user.balance);
             
-            // Withdraw Button Logic
             const wBtn = document.getElementById('btnWithdraw');
             const wMsg = document.getElementById('pendingMsg');
             if(data.user.pending) {
@@ -117,14 +110,12 @@
                 wBtn.innerText = balance < 10000 ? "Insufficient Balance" : "Request Withdrawal";
             }
 
-            // Tasks
             const tList = document.getElementById('taskList');
             tList.innerHTML = '';
             data.tasks.forEach(t => {
                 tList.innerHTML += `<div class="card"><div><b>${t.desc}</b><br><small class="gold">+${t.reward}</small></div><button class="btn" onclick="doTask('${t.link}', ${t.reward})">Go</button></div>`;
             });
 
-            // Leaderboard
             const lList = document.getElementById('lbList');
             lList.innerHTML = '';
             data.leaderboard.forEach((u,i) => {
@@ -137,7 +128,6 @@
         async function reqWithdraw() {
             if(balance < 10000) return;
             if(!confirm(`Withdraw ${balance} points?`)) return;
-            
             document.getElementById('btnWithdraw').innerText = "Sending...";
             await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ source:'webapp', action:'withdraw', userId:user.id, name:user.first_name, amount:balance })});
             loadData();
