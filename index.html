@@ -49,7 +49,7 @@
             <h4 style="margin:0; color:#d63031"><i class="fas fa-exclamation-circle"></i> Action Required</h4>
             <p style="color:#aaa; font-size:13px;">You must join our channel to unlock tasks.</p>
             <button class="btn" style="width:100%; margin-top:10px; background:#fff; color:#000" onclick="Telegram.WebApp.openTelegramLink('https://t.me/tipstream')">Open Channel</button>
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="fetchUserData(true)">Check Subscription</button>
+            <button id="btnCheckSub" class="btn" style="width:100%; margin-top:10px;" onclick="fetchUserData(true)">Check Subscription</button>
         </div>
 
         <div class="card" style="display:block; text-align:center;">
@@ -96,20 +96,39 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
+        // CONFIGURATION
         const API_URL = 'https://script.google.com/macros/s/AKfycbzBoJ0zofDibSgeJjGstO9rWoaSaPwDiVvBD1tnTQQ3H7tTezlarQMjA8AjrBt-9O4Q/exec';
+        
         let userId = tg.initDataUnsafe?.user?.id || 'TEST_USER';
         let userName = tg.initDataUnsafe?.user?.first_name || 'Guest';
         let currentBalance = 0;
         let isVerified = false;
 
-        document.addEventListener('DOMContentLoaded', () => fetchUserData());
+        document.addEventListener('DOMContentLoaded', () => {
+            if (API_URL.includes('YOUR_GOOGLE')) {
+                alert("Please replace 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' in the code with your actual deployment URL.");
+            }
+            fetchUserData();
+        });
 
         async function fetchUserData(manualCheck = false) {
-            showLoading(true);
+            if(manualCheck) {
+                document.getElementById('btnCheckSub').innerText = "Checking...";
+                document.getElementById('btnCheckSub').disabled = true;
+            } else {
+                showLoading(true);
+            }
+
             try {
-                // Added timestamp to prevent caching and forceUpdate flag
-                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&forceUpdate=${manualCheck}&t=${Date.now()}`);
+                // 'cache: no-store' ensures we don't use cached results
+                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&forceUpdate=${manualCheck}&t=${Date.now()}`, {
+                    cache: "no-store",
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                
                 const data = await res.json();
+                
                 if (data.success) {
                     currentBalance = data.balance;
                     isVerified = data.isMember;
@@ -120,20 +139,31 @@
                     if(isVerified) {
                         vCard.style.display = 'none'; // Hide warning
                         if(manualCheck) tg.showAlert("Verification Successful! Tasks unlocked.");
+                        // Refresh tasks immediately if verifying
+                        fetchTasks(); 
                     } else {
                         vCard.style.display = 'block'; // Show warning
-                        if(manualCheck) tg.showAlert("Still not verified? Try closing the app and reopening it after 30 seconds.");
+                        if(manualCheck) {
+                            tg.showAlert("Status: Not Joined.\n\nTroubleshooting:\n1. Ensure you joined the channel.\n2. Ensure the Bot is an ADMIN in the channel.\n3. Wait 1 min and try again.");
+                        }
                     }
                     updateWithdrawBtn();
                 }
             } catch (e) { 
                 console.error(e);
-                if(manualCheck) tg.showAlert("Error checking subscription.");
+                if(manualCheck) tg.showAlert("Connection Error. Please check your internet or the Bot configuration.");
             }
-            showLoading(false);
+            
+            if(manualCheck) {
+                document.getElementById('btnCheckSub').innerText = "Check Subscription";
+                document.getElementById('btnCheckSub').disabled = false;
+            } else {
+                showLoading(false);
+            }
         }
 
         async function fetchTasks() {
+            // Only block UI if we are sure they are not verified
             if(!isVerified) {
                 document.getElementById('taskList').style.display = 'none';
                 document.getElementById('lockedView').style.display = 'block';
@@ -145,7 +175,7 @@
             showLoading(true);
             
             try {
-                const res = await fetch(`${API_URL}?action=getTasks&userId=${userId}`);
+                const res = await fetch(`${API_URL}?action=getTasks&userId=${userId}&t=${Date.now()}`, { cache: "no-store" });
                 const data = await res.json();
                 const list = document.getElementById('taskList');
                 
@@ -169,7 +199,7 @@
         async function fetchLeaderboard() {
             showLoading(true);
             try {
-                const res = await fetch(`${API_URL}?action=getLeaderboard`);
+                const res = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`, { cache: "no-store" });
                 const data = await res.json();
                 document.getElementById('leaderboardList').innerHTML = data.leaderboard.map((u, i) => `
                     <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #222;">
