@@ -2,154 +2,398 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Gold Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gold Miner</title>
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; padding-bottom: 80px; }
-        .header { background: linear-gradient(to bottom, #332a00, #000); padding: 30px; text-align: center; border-bottom: 1px solid #222; }
-        .gold { color: #FFD700; }
-        .balance { font-size: 3rem; font-weight: bold; margin: 10px 0; }
-        
-        .card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .w-card { background: #1a1a1a; border: 1px solid #FFD700; border-radius: 12px; padding: 20px; margin: 15px; text-align: center; }
-        
-        .btn { background: #FFD700; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-w { width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px; }
-        .btn:disabled { background: #333; color: #666; }
-        
-        .nav { position: fixed; bottom: 0; width: 100%; background: #0a0a0a; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; }
-        .nav-item { color: #666; font-size: 0.8rem; text-align: center; }
-        .nav-item.active { color: #FFD700; }
-        
-        .section { display: none; }
-        .section.active { display: block; }
-        #loader { text-align: center; padding: 20px; color: #FFD700; }
+        :root {
+            --bg-color: #000000;
+            --card-bg: #111111;
+            --primary: #FFD700; /* Gold */
+            --text-white: #FFFFFF;
+            --text-gray: #AAAAAA;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px; /* Space for navbar */
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0) 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+        }
+
+        .balance-container {
+            margin-top: 10px;
+        }
+
+        .balance-label {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            color: var(--text-gray);
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards & Buttons */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        /* Task Specifics */
+        .task-info h4 { margin: 0; font-size: 16px; color: #fff; }
+        .task-info p { margin: 5px 0 0; color: var(--primary); font-size: 13px; }
+
+        /* Leaderboard */
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+        }
+        .rank-badge {
+            color: var(--primary);
+            width: 25px;
+            font-weight: bold;
+        }
+
+        /* Loading Spinner */
+        #loading {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary);
+            font-size: 24px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
+    <div class="header">
+        <div class="balance-label">Current Balance</div>
+        <div class="balance-amount"><span id="userBalance">0</span> <i class="fas fa-coins"></i></div>
+    </div>
+
+    <!-- HOME TAB -->
     <div id="home" class="section active">
-        <div class="header">
-            <div id="uName">...</div>
-            <div class="balance" id="uBal">0</div>
-            <div class="gold">POINTS</div>
+        <div class="card">
+            <div>
+                <h4 style="margin:0">Verify Channel</h4>
+                <small style="color:#888">Join our channel for updates</small>
+            </div>
+            <button class="btn" onclick="Telegram.WebApp.openTelegramLink('https://t.me/YOUR_CHANNEL')">Join</button>
         </div>
 
-        <div class="w-card">
-            <h3>Withdraw Funds</h3>
-            <p style="color:#888; font-size:0.9rem">Min: 10,000 Points</p>
-            <div id="pendingMsg" style="display:none; color:orange">⏳ Processing...</div>
-            <button id="btnWithdraw" class="btn btn-w" onclick="reqWithdraw()" disabled>Insufficient Balance</button>
+        <div class="card" style="display:block; text-align:center;">
+            <h3>Referral System</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">Invite friends and earn 100 coins each!</p>
+            <button class="btn btn-outline" onclick="copyReferral()">Copy Referral Link</button>
         </div>
 
-        <div class="card" style="display:block">
-            <small style="color:#888">Your Referral Link</small>
-            <div id="refLink" style="font-family:monospace; color:#FFD700; word-break:break-all; margin:5px 0;">...</div>
-            <button class="btn" style="width:100%" onclick="copyRef()">Copy</button>
+        <div class="card" style="display:block; text-align:center;">
+            <h3>Withdraw</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">Min: 10,000 Coins</p>
+            <button id="btnWithdraw" class="btn" style="width:100%" onclick="requestWithdraw()">Request Payout</button>
         </div>
     </div>
 
+    <!-- TASKS TAB -->
     <div id="tasks" class="section">
-        <h2 class="gold" style="text-align:center">Tasks</h2>
-        <div id="taskList"></div>
+        <h3 style="color:var(--primary)">Available Tasks</h3>
+        <div id="taskList">
+            <!-- Tasks injected via JS -->
+            <div style="text-align:center; color:#555; margin-top:20px;">Loading tasks...</div>
+        </div>
     </div>
 
+    <!-- LEADERBOARD TAB -->
     <div id="leaderboard" class="section">
-        <h2 class="gold" style="text-align:center">Top 10</h2>
-        <div id="lbList"></div>
+        <h3 style="color:var(--primary)">Top Miners</h3>
+        <div class="card" style="display:block" id="leaderboardList">
+            <!-- Leaderboard injected via JS -->
+        </div>
     </div>
 
-    <div id="loader">Loading Data...</div>
-
-    <div class="nav">
-        <div class="nav-item active" onclick="tab('home', this)">🏠 Home</div>
-        <div class="nav-item" onclick="tab('tasks', this)">📋 Tasks</div>
-        <div class="nav-item" onclick="tab('leaderboard', this)">🏆 Top</div>
+    <!-- NAV BAR -->
+    <div class="navbar">
+        <div class="nav-item active" onclick="switchTab('home', this)">
+            <i class="fas fa-home"></i> Home
+        </div>
+        <div class="nav-item" onclick="switchTab('tasks', this)">
+            <i class="fas fa-list-check"></i> Tasks
+        </div>
+        <div class="nav-item" onclick="switchTab('leaderboard', this)">
+            <i class="fas fa-trophy"></i> Top
+        </div>
     </div>
+
+    <div id="loading"><i class="fas fa-spinner fa-spin"></i></div>
 
     <script>
-        // === PASTE YOUR DEPLOYMENT URL HERE ===
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz73WW6UjBTKQT0fnhu_bot6M8aawhm4E_r13ewswUAYlt9AtOvDw4ONpwdmcKTyk_7/exec'; 
-        const BOT_USERNAME = 'UjGroup_BOT'; // Without @
-        // ======================================
-
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const user = tg.initDataUnsafe.user;
-        let balance = 0;
 
-        async function init() {
-            if(!user) return;
-            document.getElementById('refLink').innerText = `https://t.me/${BOT_USERNAME}?start=${user.id}`;
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ source:'webapp', action:'register', id:user.id, first_name:user.first_name })});
-            loadData();
-        }
+        // DEPLOYMENT URL FROM GOOGLE APPS SCRIPT
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzfF0pCf4lCucnfj-KBtNlRRNAK5RgfcXA2Mr4jAJXyzJ8cXPwJBCftUY0Tsho4bpxQ/exec';
+        
+        let userId = tg.initDataUnsafe?.user?.id || 'TEST_USER'; // Fallback for browser testing
+        let userName = tg.initDataUnsafe?.user?.first_name || 'Guest';
+        let currentBalance = 0;
 
-        async function loadData() {
-            document.getElementById('loader').style.display = 'block';
-            const res = await fetch(`${SCRIPT_URL}?action=getData&userId=${user.id}`);
-            const data = await res.json();
-            
-            document.getElementById('uName').innerText = data.user.name;
-            document.getElementById('uBal').innerText = data.user.balance;
-            balance = parseInt(data.user.balance);
-            
-            const wBtn = document.getElementById('btnWithdraw');
-            const wMsg = document.getElementById('pendingMsg');
-            if(data.user.pending) {
-                wBtn.style.display = 'none';
-                wMsg.style.display = 'block';
-            } else {
-                wBtn.style.display = 'block';
-                wMsg.style.display = 'none';
-                wBtn.disabled = balance < 10000;
-                wBtn.innerText = balance < 10000 ? "Insufficient Balance" : "Request Withdrawal";
-            }
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUserData();
+        });
 
-            const tList = document.getElementById('taskList');
-            tList.innerHTML = '';
-            data.tasks.forEach(t => {
-                tList.innerHTML += `<div class="card"><div><b>${t.desc}</b><br><small class="gold">+${t.reward}</small></div><button class="btn" onclick="doTask('${t.link}', ${t.reward})">Go</button></div>`;
-            });
+        // ---------------- API CALLS ----------------
 
-            const lList = document.getElementById('lbList');
-            lList.innerHTML = '';
-            data.leaderboard.forEach((u,i) => {
-                lList.innerHTML += `<div class="card" style="margin:5px 15px"><span>#${i+1} ${u.name}</span><span class="gold">${u.balance}</span></div>`;
-            });
-
-            document.getElementById('loader').style.display = 'none';
-        }
-
-        async function reqWithdraw() {
-            if(balance < 10000) return;
-            if(!confirm(`Withdraw ${balance} points?`)) return;
-            document.getElementById('btnWithdraw').innerText = "Sending...";
-            await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ source:'webapp', action:'withdraw', userId:user.id, name:user.first_name, amount:balance })});
-            loadData();
-            alert("Request sent to Admin!");
-        }
-
-        function doTask(link, reward) {
-            tg.openLink(link);
-            setTimeout(async () => {
-                if(confirm("Did you finish?")) {
-                    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ source:'webapp', action:'completeTask', userId:user.id, reward:reward })});
-                    loadData();
+        async function fetchUserData() {
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentBalance = data.balance;
+                    document.getElementById('userBalance').innerText = currentBalance;
+                    updateWithdrawBtn();
                 }
+            } catch (e) {
+                console.error(e);
+            }
+            showLoading(false);
+        }
+
+        async function fetchTasks() {
+            showLoading(true);
+            const list = document.getElementById('taskList');
+            try {
+                const res = await fetch(`${API_URL}?action=getTasks`);
+                const data = await res.json();
+                
+                if (data.success && data.tasks.length > 0) {
+                    list.innerHTML = data.tasks.map(t => `
+                        <div class="card">
+                            <div class="task-info">
+                                <h4>${t.desc}</h4>
+                                <p>+${t.reward} Coins</p>
+                            </div>
+                            <button id="btn-${t.id}" class="btn" onclick="startTask('${t.id}', '${t.link}', ${t.reward})">Start</button>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<p style="text-align:center; color:#555">No tasks available.</p>';
+                }
+            } catch (e) { console.error(e); }
+            showLoading(false);
+        }
+
+        async function fetchLeaderboard() {
+            showLoading(true);
+            const list = document.getElementById('leaderboardList');
+            try {
+                const res = await fetch(`${API_URL}?action=getLeaderboard`);
+                const data = await res.json();
+                
+                list.innerHTML = data.leaderboard.map((u, i) => `
+                    <div class="leaderboard-item">
+                        <div><span class="rank-badge">#${i+1}</span> ${u.name}</div>
+                        <div style="color:var(--primary)">${u.balance}</div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+            showLoading(false);
+        }
+
+        async function requestWithdraw() {
+            if(currentBalance < 10000) return;
+            
+            if(!confirm("Request withdrawal for " + currentBalance + " coins?")) return;
+
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_URL}?action=withdraw&userId=${userId}&name=${userName}`);
+                const data = await res.json();
+                alert(data.message);
+                fetchUserData(); // Refresh balance
+            } catch (e) { alert("Error connecting to server"); }
+            showLoading(false);
+        }
+
+        // ---------------- LOGIC ----------------
+
+        function startTask(taskId, link, reward) {
+            const btn = document.getElementById(`btn-${taskId}`);
+            
+            // 1. Open Link
+            window.open(link, '_blank');
+            
+            // 2. Wait state
+            btn.disabled = true;
+            btn.innerText = "Wait 5s...";
+            
+            setTimeout(() => {
+                btn.innerText = "Claim Reward";
+                btn.disabled = false;
+                btn.onclick = () => claimTask(taskId, reward, btn);
             }, 5000);
         }
 
-        function tab(id, el) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
+        async function claimTask(taskId, reward, btnElement) {
+            btnElement.innerText = "Checking...";
+            btnElement.disabled = true;
+
+            // In a real app, you would check if they actually joined via API
+            // Here we trust the click (simulated verification)
+            try {
+                const res = await fetch(`${API_URL}?action=completeTask&userId=${userId}&reward=${reward}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentBalance = data.newBalance;
+                    document.getElementById('userBalance').innerText = currentBalance;
+                    btnElement.innerText = "Done ✅";
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            } catch (e) {
+                btnElement.innerText = "Error";
+            }
         }
-        function copyRef() { navigator.clipboard.writeText(document.getElementById('refLink').innerText); alert("Copied"); }
-        
-        init();
+
+        function copyReferral() {
+            const link = `https://t.me/YOUR_BOT_USERNAME?start=${userId}`;
+            navigator.clipboard.writeText(link);
+            tg.showAlert("Referral link copied!");
+        }
+
+        function updateWithdrawBtn() {
+            const btn = document.getElementById('btnWithdraw');
+            if (currentBalance < 10000) {
+                btn.disabled = true;
+                btn.innerText = `Need ${10000 - currentBalance} more`;
+            } else {
+                btn.disabled = false;
+                btn.innerText = "Withdraw Funds";
+            }
+        }
+
+        // ---------------- UI UTILS ----------------
+
+        function switchTab(tabId, navEl) {
+            // Update Nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            navEl.classList.add('active');
+            
+            // Update Sections
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            // Load Data
+            if(tabId === 'tasks') fetchTasks();
+            if(tabId === 'leaderboard') fetchLeaderboard();
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
     </script>
 </body>
 </html>
