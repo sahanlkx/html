@@ -34,8 +34,6 @@
             <div id="uName">...</div>
             <div class="balance" id="uBal">0</div>
             <div class="gold">POINTS</div>
-            <br>
-            <button class="btn" onclick="tg.openTelegramLink(CHANNEL_URL)">Verify: Join Channel</button>
         </div>
 
         <div class="w-card">
@@ -71,11 +69,10 @@
     </div>
 
     <script>
-        // --- EDIT THESE ---
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzH32_2GjBNqR6da8xeUVy6lrjFqO_WhixgRf26hArsNpJB43kPOWfENx405Bv6oaee/exec';
-        const CHANNEL_URL = 'https://t.me/TipStream';
-        const BOT_NAME = 'UjGroup_BOT';
-        // ------------------
+        // === PASTE YOUR DEPLOYMENT URL HERE ===
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzJ3cvst5QZIVEeqYrRodjpCmywq-xrGAeUqbj7bNtKpRBxam3yZJYABLnALb1RqvF/exec'; 
+        const BOT_USERNAME = 'UjGroup_BOT'; // Without @
+        // ======================================
 
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -84,7 +81,7 @@
 
         async function init() {
             if(!user) return;
-            document.getElementById('refLink').innerText = `https://t.me/${BOT_NAME}?start=${user.id}`;
+            document.getElementById('refLink').innerText = `https://t.me/${BOT_USERNAME}?start=${user.id}`;
             await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ source:'webapp', action:'register', id:user.id, first_name:user.first_name })});
             loadData();
         }
