@@ -9,6 +9,10 @@
     
     <style>
         :root { --bg: #000000; --card: #111111; --gold: #FFD700; --white: #FFFFFF; --gray: #AAAAAA; }
+        
+        /* 2. REMOVE BLUE EFFECT */
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
+
         body { background-color: var(--bg); color: var(--white); font-family: sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
         
         /* HEADER */
@@ -17,25 +21,55 @@
 
         /* NAVBAR */
         .navbar { position: fixed; bottom: 0; width: 100%; background-color: var(--card); border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-        .nav-item { color: var(--gray); font-size: 12px; cursor: pointer; text-align: center; }
+        .nav-item { color: var(--gray); font-size: 12px; cursor: pointer; text-align: center; transition: 0.2s; }
         .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
-        .nav-item.active { color: var(--gold); }
+        .nav-item.active { color: var(--gold); transform: scale(1.1); }
 
         /* COMPONENTS */
         .section { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
-        .card { background-color: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { background-color: var(--gold); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .card { background-color: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .flex-card { display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn { background-color: var(--gold); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
         .btn:disabled { background-color: #333; color: #666; }
         
-        /* LOCK SCREEN */
-        .locked-overlay { text-align: center; padding: 40px 20px; border: 1px solid var(--gold); border-radius: 10px; background: rgba(255, 215, 0, 0.05); }
-        
+        /* 4. CUSTOM WITHDRAW INPUT */
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .custom-input { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-size: 16px; text-align: center; }
+        .custom-input:focus { border-color: var(--gold); }
+
+        /* 3. PENDING STATUS */
+        .pending-box { background: rgba(255, 215, 0, 0.1); border: 1px dashed var(--gold); padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; display: none; }
+        .pending-text { color: var(--gold); font-size: 13px; }
+
+        /* 5. COMPLETED TASKS */
+        .completed-section { opacity: 0.5; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; }
+        .completed-header { color: var(--gray); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
+
+        /* 1. CUSTOM NOTIFICATION */
+        #customNotification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: #222; border: 1px solid var(--gold); color: #fff;
+            padding: 12px 20px; border-radius: 8px; z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 10px;
+        }
+        #customNotification.show { transform: translateX(-50%) translateY(0); }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--gold); font-size: 24px; display: none; }
     </style>
 </head>
 <body>
+
+    <!-- 1. CUSTOM NOTIFICATION DOM -->
+    <div id="customNotification">
+        <i class="fas fa-info-circle" style="color:var(--gold)"></i>
+        <span id="notifText">Notification</span>
+    </div>
 
     <div class="header">
         <div style="color:#888; font-size:14px;">Current Balance</div>
@@ -44,7 +78,11 @@
 
     <!-- HOME TAB -->
     <div id="home" class="section active">
-        <!-- Verification Status -->
+        <!-- 3. PENDING DISPLAY -->
+        <div id="pendingContainer" class="pending-box">
+            <div class="pending-text"><i class="fas fa-clock"></i> Processing Withdrawal: <span id="pendingAmount">0</span> Coins</div>
+        </div>
+
         <div id="verificationCard" class="card" style="display:block; text-align:center; border-color: #d63031;">
             <h4 style="margin:0; color:#d63031"><i class="fas fa-exclamation-circle"></i> Action Required</h4>
             <p style="color:#aaa; font-size:13px;">You must join our channel to unlock tasks.</p>
@@ -58,9 +96,15 @@
             <button class="btn" style="width:100%; background:transparent; border:1px solid var(--gold); color:var(--gold)" onclick="copyReferral()">Copy Link</button>
         </div>
 
-        <div class="card" style="display:block; text-align:center;">
-            <h3>Withdraw</h3>
-            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">Min: 10,000 Coins</p>
+        <div class="card" style="display:block;">
+            <h3 style="text-align:center; margin-top:0">Withdraw</h3>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px; text-align:center">Min: 10,000 Coins</p>
+            
+            <!-- 4. CUSTOM WITHDRAW INPUT -->
+            <div class="input-group">
+                <input type="number" id="withdrawInput" class="custom-input" placeholder="Amount" min="10000">
+            </div>
+            
             <button id="btnWithdraw" class="btn" style="width:100%" onclick="requestWithdraw()">Request Payout</button>
         </div>
     </div>
@@ -68,14 +112,13 @@
     <!-- TASKS TAB -->
     <div id="tasks" class="section">
         <h3 style="color:var(--gold)">Available Tasks</h3>
-        
-        <div id="lockedView" class="locked-overlay" style="display:none;">
-            <i class="fas fa-lock" style="font-size:40px; color:var(--gold); margin-bottom:20px;"></i>
-            <h3>Tasks Locked</h3>
-            <p style="color:#aaa">Please verify your channel subscription in the Home tab to access tasks.</p>
-        </div>
-
         <div id="taskList"></div>
+
+        <!-- 5. COMPLETED TASKS BELOW -->
+        <div id="completedSection" class="completed-section" style="display:none;">
+            <div class="completed-header">Completed Tasks</div>
+            <div id="completedTaskList"></div>
+        </div>
     </div>
 
     <!-- LEADERBOARD TAB -->
@@ -97,36 +140,39 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // CONFIGURATION
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwmbTVenIW9iU9xSPdotUWY7-UpjUixax1eiIm2yl0-3vVKADStpiFIq5Hm_2bXh0AQ/exec';
+        // --- REPLACE THIS URL ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxq5aGC81GQGgRBNv-CK26XyeddmWB4mqEWaznZz8dWo3vJtpPtArNU2mqIp25woNQ_/exec';
+        // ------------------------
         
         let userId = tg.initDataUnsafe?.user?.id || 'TEST_USER';
         let userName = tg.initDataUnsafe?.user?.first_name || 'Guest';
         let currentBalance = 0;
         let isVerified = false;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (API_URL.includes('YOUR_GOOGLE')) {
-                alert("Please replace 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' in the code with your actual deployment URL.");
-            }
-            fetchUserData();
-        });
+        document.addEventListener('DOMContentLoaded', () => fetchUserData());
+
+        // 1. CUSTOM NOTIFICATION FUNCTION
+        function showNotification(text) {
+            const notif = document.getElementById('customNotification');
+            document.getElementById('notifText').innerText = text;
+            notif.classList.add('show');
+            tg.HapticFeedback.notificationOccurred('success');
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 3000);
+        }
 
         async function fetchUserData(manualCheck = false) {
             if(manualCheck) {
-                document.getElementById('btnCheckSub').innerText = "Checking...";
-                document.getElementById('btnCheckSub').disabled = true;
+                const btn = document.getElementById('btnCheckSub');
+                btn.innerText = "Checking...";
+                btn.disabled = true;
             } else {
                 showLoading(true);
             }
 
             try {
-                // 'cache: no-store' ensures we don't use cached results
-                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&forceUpdate=${manualCheck}&t=${Date.now()}`, {
-                    cache: "no-store",
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
-                
+                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&forceUpdate=${manualCheck}&t=${Date.now()}`);
                 const data = await res.json();
                 
                 if (data.success) {
@@ -134,72 +180,125 @@
                     isVerified = data.isMember;
                     document.getElementById('userBalance').innerText = currentBalance;
                     
-                    // Update UI based on verification
+                    // 3. SHOW PENDING
+                    if(data.pending > 0) {
+                        document.getElementById('pendingContainer').style.display = 'block';
+                        document.getElementById('pendingAmount').innerText = data.pending;
+                    } else {
+                        document.getElementById('pendingContainer').style.display = 'none';
+                    }
+
+                    // Handle Verification UI
                     const vCard = document.getElementById('verificationCard');
                     if(isVerified) {
-                        vCard.style.display = 'none'; // Hide warning
-                        if(manualCheck) tg.showAlert("Verification Successful! Tasks unlocked.");
-                        // Refresh tasks immediately if verifying
+                        vCard.style.display = 'none';
+                        if(manualCheck) showNotification("Verification Successful!");
                         fetchTasks(); 
                     } else {
-                        vCard.style.display = 'block'; // Show warning
-                        if(manualCheck) {
-                            tg.showAlert("Status: Not Joined.\n\nTroubleshooting:\n1. Ensure you joined the channel.\n2. Ensure the Bot is an ADMIN in the channel.\n3. Wait 1 min and try again.");
-                        }
+                        vCard.style.display = 'block';
+                        if(manualCheck) showNotification("Status: Not Joined");
                     }
-                    updateWithdrawBtn();
                 }
-            } catch (e) { 
-                console.error(e);
-                if(manualCheck) tg.showAlert("Connection Error. Please check your internet or the Bot configuration.");
-            }
+            } catch (e) { console.error(e); }
             
             if(manualCheck) {
-                document.getElementById('btnCheckSub').innerText = "Check Subscription";
-                document.getElementById('btnCheckSub').disabled = false;
+                const btn = document.getElementById('btnCheckSub');
+                btn.innerText = "Check Subscription";
+                btn.disabled = false;
             } else {
                 showLoading(false);
             }
         }
 
         async function fetchTasks() {
-            // Only block UI if we are sure they are not verified
-            if(!isVerified) {
-                document.getElementById('taskList').style.display = 'none';
-                document.getElementById('lockedView').style.display = 'block';
-                return;
-            }
-
-            document.getElementById('lockedView').style.display = 'none';
-            document.getElementById('taskList').style.display = 'block';
+            if(!isVerified) return;
             showLoading(true);
             
             try {
-                const res = await fetch(`${API_URL}?action=getTasks&userId=${userId}&t=${Date.now()}`, { cache: "no-store" });
+                const res = await fetch(`${API_URL}?action=getTasks&userId=${userId}&t=${Date.now()}`);
                 const data = await res.json();
-                const list = document.getElementById('taskList');
                 
-                if (data.success && data.tasks.length > 0) {
-                    list.innerHTML = data.tasks.map(t => `
-                        <div class="card" id="card-${t.id}">
-                            <div>
-                                <h4 style="margin:0; color:#fff">${t.desc}</h4>
-                                <p style="margin:5px 0 0; color:var(--gold)">+${t.reward}</p>
+                const activeList = document.getElementById('taskList');
+                const completedList = document.getElementById('completedTaskList');
+                const completedSection = document.getElementById('completedSection');
+
+                if (data.success) {
+                    // Separate tasks
+                    const activeTasks = data.tasks.filter(t => !t.completed);
+                    const doneTasks = data.tasks.filter(t => t.completed);
+
+                    // Render Active
+                    if (activeTasks.length > 0) {
+                        activeList.innerHTML = activeTasks.map(t => `
+                            <div class="card flex-card" id="card-${t.id}">
+                                <div>
+                                    <h4 style="margin:0; color:#fff">${t.desc}</h4>
+                                    <p style="margin:5px 0 0; color:var(--gold)">+${t.reward}</p>
+                                </div>
+                                <button id="btn-${t.id}" class="btn" onclick="startTask('${t.id}', '${t.link}', ${t.reward})">Start</button>
                             </div>
-                            <button id="btn-${t.id}" class="btn" onclick="startTask('${t.id}', '${t.link}', ${t.reward})">Start</button>
-                        </div>
-                    `).join('');
-                } else {
-                    list.innerHTML = '<p style="text-align:center; color:#555">No new tasks available.</p>';
+                        `).join('');
+                    } else {
+                        activeList.innerHTML = '<p style="text-align:center; color:#555">No tasks available.</p>';
+                    }
+
+                    // 5. Render Completed Below
+                    if (doneTasks.length > 0) {
+                        completedSection.style.display = 'block';
+                        completedList.innerHTML = doneTasks.map(t => `
+                            <div class="card flex-card" style="background:#0a0a0a; border-color:#222">
+                                <div>
+                                    <h4 style="margin:0; color:#666; text-decoration:line-through">${t.desc}</h4>
+                                </div>
+                                <div style="color:#444; font-size:12px;"><i class="fas fa-check"></i> Done</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        completedSection.style.display = 'none';
+                    }
                 }
             } catch (e) { console.error(e); }
             showLoading(false);
         }
 
+        async function requestWithdraw() {
+            // 4. Custom Amount Logic
+            const input = document.getElementById('withdrawInput');
+            const amount = parseInt(input.value);
+
+            if(!amount || amount < 10000) {
+                showNotification("Min withdrawal is 10,000");
+                return;
+            }
+            if(amount > currentBalance) {
+                showNotification("Insufficient balance");
+                return;
+            }
+            
+            if(!confirm(`Request withdrawal for ${amount} coins?`)) return;
+
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_URL}?action=withdraw&userId=${userId}&name=${userName}&amount=${amount}`);
+                const data = await res.json();
+                
+                if(data.success) {
+                    showNotification(data.message);
+                    input.value = ''; // Clear input
+                    fetchUserData(); // Refresh to update balance and pending display
+                } else {
+                    showNotification(data.message);
+                }
+            } catch (e) { showNotification("Connection Error"); }
+            showLoading(false);
+        }
+
+        // ... existing leaderboard and helpers ...
+
         async function fetchLeaderboard() {
             showLoading(true);
             try {
-                const res = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`, { cache: "no-store" });
+                const res = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`);
                 const data = await res.json();
                 document.getElementById('leaderboardList').innerHTML = data.leaderboard.map((u, i) => `
                     <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #222;">
@@ -211,7 +310,6 @@
             showLoading(false);
         }
 
-        // Logic
         function startTask(taskId, link, reward) {
             const btn = document.getElementById(`btn-${taskId}`);
             window.open(link, '_blank');
@@ -225,7 +323,7 @@
         }
 
         async function claimTask(taskId, reward, btn) {
-            btn.innerText = "Checking...";
+            btn.innerText = "...";
             btn.disabled = true;
             try {
                 const res = await fetch(`${API_URL}?action=completeTask&userId=${userId}&taskId=${taskId}&reward=${reward}`);
@@ -233,47 +331,26 @@
                 if (data.success) {
                     currentBalance = data.newBalance;
                     document.getElementById('userBalance').innerText = currentBalance;
-                    document.getElementById(`card-${taskId}`).style.display = 'none'; // Remove from view
-                    tg.HapticFeedback.notificationOccurred('success');
-                    tg.showAlert(`Success! You earned ${reward} coins.`);
+                    document.getElementById(`card-${taskId}`).style.display = 'none'; 
+                    showNotification(`+${reward} Coins!`);
+                    
+                    // Refresh to move task to completed section
+                    setTimeout(fetchTasks, 1000); 
                 } else {
-                    alert(data.message); // Already done
-                    document.getElementById(`card-${taskId}`).style.display = 'none';
+                    showNotification(data.message);
                 }
             } catch (e) { btn.innerText = "Error"; }
         }
 
-        async function requestWithdraw() {
-            if(currentBalance < 10000) return;
-            if(!confirm("Request withdrawal?")) return;
-            showLoading(true);
-            try {
-                const res = await fetch(`${API_URL}?action=withdraw&userId=${userId}&name=${userName}`);
-                const data = await res.json();
-                alert(data.message);
-                fetchUserData();
-            } catch (e) { alert("Error"); }
-            showLoading(false);
-        }
-
         function copyReferral() {
             navigator.clipboard.writeText(`https://t.me/UjGroup_BOT?start=${userId}`);
-            tg.showAlert("Link copied!");
-        }
-
-        function updateWithdrawBtn() {
-            const btn = document.getElementById('btnWithdraw');
-            if (currentBalance < 10000) {
-                btn.disabled = true;
-                btn.innerText = `Need ${10000 - currentBalance} more`;
-            } else {
-                btn.disabled = false;
-                btn.innerText = "Withdraw Funds";
-            }
+            showNotification("Link copied!");
         }
 
         function switchTab(tabId, navEl) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
             navEl.classList.add('active');
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
