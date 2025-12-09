@@ -49,7 +49,7 @@
             <h4 style="margin:0; color:#d63031"><i class="fas fa-exclamation-circle"></i> Action Required</h4>
             <p style="color:#aaa; font-size:13px;">You must join our channel to unlock tasks.</p>
             <button class="btn" style="width:100%; margin-top:10px; background:#fff; color:#000" onclick="Telegram.WebApp.openTelegramLink('https://t.me/tipstream')">Open Channel</button>
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="fetchUserData()">Check Subscription</button>
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="fetchUserData(true)">Check Subscription</button>
         </div>
 
         <div class="card" style="display:block; text-align:center;">
@@ -104,10 +104,11 @@
 
         document.addEventListener('DOMContentLoaded', () => fetchUserData());
 
-        async function fetchUserData() {
+        async function fetchUserData(manualCheck = false) {
             showLoading(true);
             try {
-                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}`);
+                // Added timestamp to prevent caching
+                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&t=${Date.now()}`);
                 const data = await res.json();
                 if (data.success) {
                     currentBalance = data.balance;
@@ -118,12 +119,17 @@
                     const vCard = document.getElementById('verificationCard');
                     if(isVerified) {
                         vCard.style.display = 'none'; // Hide warning
+                        if(manualCheck) tg.showAlert("Verification Successful! Tasks unlocked.");
                     } else {
                         vCard.style.display = 'block'; // Show warning
+                        if(manualCheck) tg.showAlert("Still not joined. Please join the channel and try again.");
                     }
                     updateWithdrawBtn();
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                if(manualCheck) tg.showAlert("Error checking subscription.");
+            }
             showLoading(false);
         }
 
