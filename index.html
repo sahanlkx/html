@@ -107,8 +107,8 @@
         async function fetchUserData(manualCheck = false) {
             showLoading(true);
             try {
-                // Added timestamp to prevent caching
-                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&t=${Date.now()}`);
+                // Added timestamp to prevent caching and forceUpdate flag
+                const res = await fetch(`${API_URL}?action=getUser&userId=${userId}&name=${userName}&forceUpdate=${manualCheck}&t=${Date.now()}`);
                 const data = await res.json();
                 if (data.success) {
                     currentBalance = data.balance;
@@ -122,7 +122,7 @@
                         if(manualCheck) tg.showAlert("Verification Successful! Tasks unlocked.");
                     } else {
                         vCard.style.display = 'block'; // Show warning
-                        if(manualCheck) tg.showAlert("Still not joined. Please join the channel and try again.");
+                        if(manualCheck) tg.showAlert("Still not verified? Try closing the app and reopening it after 30 seconds.");
                     }
                     updateWithdrawBtn();
                 }
