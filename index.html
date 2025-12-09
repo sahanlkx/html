@@ -4,190 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gold Miner</title>
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root {
-            --bg-color: #000000;
-            --card-bg: #111111;
-            --primary: #FFD700; /* Gold */
-            --text-white: #FFFFFF;
-            --text-gray: #AAAAAA;
-        }
+        :root { --bg: #000000; --card: #111111; --gold: #FFD700; --white: #FFFFFF; --gray: #AAAAAA; }
+        body { background-color: var(--bg); color: var(--white); font-family: sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
+        
+        /* HEADER */
+        .header { background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0) 100%); padding: 20px; text-align: center; border-bottom: 1px solid #222; }
+        .balance-amount { font-size: 36px; font-weight: 800; color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-white);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 80px; /* Space for navbar */
-            overflow-x: hidden;
-        }
+        /* NAVBAR */
+        .navbar { position: fixed; bottom: 0; width: 100%; background-color: var(--card); border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .nav-item { color: var(--gray); font-size: 12px; cursor: pointer; text-align: center; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: var(--gold); }
 
-        /* Header */
-        .header {
-            background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0) 100%);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #222;
-        }
-
-        .balance-container {
-            margin-top: 10px;
-        }
-
-        .balance-label {
-            color: var(--text-gray);
-            font-size: 14px;
-        }
-
-        .balance-amount {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        /* Navigation */
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: var(--card-bg);
-            border-top: 1px solid #333;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            z-index: 1000;
-        }
-
-        .nav-item {
-            color: var(--text-gray);
-            text-align: center;
-            font-size: 12px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 4px;
-            display: block;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-        }
-
-        /* Sections */
-        .section {
-            display: none;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Cards & Buttons */
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn {
-            background-color: var(--primary);
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-
-        .btn:disabled {
-            background-color: #333;
-            color: #666;
-            cursor: not-allowed;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-        }
-
-        /* Task Specifics */
-        .task-info h4 { margin: 0; font-size: 16px; color: #fff; }
-        .task-info p { margin: 5px 0 0; color: var(--primary); font-size: 13px; }
-
-        /* Leaderboard */
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #222;
-        }
-        .rank-badge {
-            color: var(--primary);
-            width: 25px;
-            font-weight: bold;
-        }
-
-        /* Loading Spinner */
-        #loading {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--primary);
-            font-size: 24px;
-            display: none;
-        }
+        /* COMPONENTS */
+        .section { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+        .card { background-color: var(--card); border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background-color: var(--gold); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .btn:disabled { background-color: #333; color: #666; }
+        
+        /* LOCK SCREEN */
+        .locked-overlay { text-align: center; padding: 40px 20px; border: 1px solid var(--gold); border-radius: 10px; background: rgba(255, 215, 0, 0.05); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--gold); font-size: 24px; display: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="balance-label">Current Balance</div>
+        <div style="color:#888; font-size:14px;">Current Balance</div>
         <div class="balance-amount"><span id="userBalance">0</span> <i class="fas fa-coins"></i></div>
     </div>
 
     <!-- HOME TAB -->
     <div id="home" class="section active">
-        <div class="card">
-            <div>
-                <h4 style="margin:0">Verify Channel</h4>
-                <small style="color:#888">Join our channel for updates</small>
-            </div>
-            <button class="btn" onclick="Telegram.WebApp.openTelegramLink('https://t.me/YOUR_CHANNEL')">Join</button>
+        <!-- Verification Status -->
+        <div id="verificationCard" class="card" style="display:block; text-align:center; border-color: #d63031;">
+            <h4 style="margin:0; color:#d63031"><i class="fas fa-exclamation-circle"></i> Action Required</h4>
+            <p style="color:#aaa; font-size:13px;">You must join our channel to unlock tasks.</p>
+            <button class="btn" style="width:100%; margin-top:10px; background:#fff; color:#000" onclick="Telegram.WebApp.openTelegramLink('https://t.me/tipstream')">Open Channel</button>
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="fetchUserData()">Check Subscription</button>
         </div>
 
         <div class="card" style="display:block; text-align:center;">
             <h3>Referral System</h3>
-            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">Invite friends and earn 100 coins each!</p>
-            <button class="btn btn-outline" onclick="copyReferral()">Copy Referral Link</button>
+            <p style="color:#aaa; font-size:13px; margin-bottom:15px;">Invite friends = 100 coins!</p>
+            <button class="btn" style="width:100%; background:transparent; border:1px solid var(--gold); color:var(--gold)" onclick="copyReferral()">Copy Link</button>
         </div>
 
         <div class="card" style="display:block; text-align:center;">
@@ -199,32 +67,28 @@
 
     <!-- TASKS TAB -->
     <div id="tasks" class="section">
-        <h3 style="color:var(--primary)">Available Tasks</h3>
-        <div id="taskList">
-            <!-- Tasks injected via JS -->
-            <div style="text-align:center; color:#555; margin-top:20px;">Loading tasks...</div>
+        <h3 style="color:var(--gold)">Available Tasks</h3>
+        
+        <div id="lockedView" class="locked-overlay" style="display:none;">
+            <i class="fas fa-lock" style="font-size:40px; color:var(--gold); margin-bottom:20px;"></i>
+            <h3>Tasks Locked</h3>
+            <p style="color:#aaa">Please verify your channel subscription in the Home tab to access tasks.</p>
         </div>
+
+        <div id="taskList"></div>
     </div>
 
     <!-- LEADERBOARD TAB -->
     <div id="leaderboard" class="section">
-        <h3 style="color:var(--primary)">Top Miners</h3>
-        <div class="card" style="display:block" id="leaderboardList">
-            <!-- Leaderboard injected via JS -->
-        </div>
+        <h3 style="color:var(--gold)">Top Miners</h3>
+        <div class="card" style="display:block" id="leaderboardList"></div>
     </div>
 
     <!-- NAV BAR -->
     <div class="navbar">
-        <div class="nav-item active" onclick="switchTab('home', this)">
-            <i class="fas fa-home"></i> Home
-        </div>
-        <div class="nav-item" onclick="switchTab('tasks', this)">
-            <i class="fas fa-list-check"></i> Tasks
-        </div>
-        <div class="nav-item" onclick="switchTab('leaderboard', this)">
-            <i class="fas fa-trophy"></i> Top
-        </div>
+        <div class="nav-item active" onclick="switchTab('home', this)"><i class="fas fa-home"></i> Home</div>
+        <div class="nav-item" onclick="switchTab('tasks', this)"><i class="fas fa-list-check"></i> Tasks</div>
+        <div class="nav-item" onclick="switchTab('leaderboard', this)"><i class="fas fa-trophy"></i> Top</div>
     </div>
 
     <div id="loading"><i class="fas fa-spinner fa-spin"></i></div>
@@ -232,20 +96,13 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
-        // DEPLOYMENT URL FROM GOOGLE APPS SCRIPT
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzfF0pCf4lCucnfj-KBtNlRRNAK5RgfcXA2Mr4jAJXyzJ8cXPwJBCftUY0Tsho4bpxQ/exec';
-        
-        let userId = tg.initDataUnsafe?.user?.id || 'TEST_USER'; // Fallback for browser testing
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzBoJ0zofDibSgeJjGstO9rWoaSaPwDiVvBD1tnTQQ3H7tTezlarQMjA8AjrBt-9O4Q/exec';
+        let userId = tg.initDataUnsafe?.user?.id || 'TEST_USER';
         let userName = tg.initDataUnsafe?.user?.first_name || 'Guest';
         let currentBalance = 0;
+        let isVerified = false;
 
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchUserData();
-        });
-
-        // ---------------- API CALLS ----------------
+        document.addEventListener('DOMContentLoaded', () => fetchUserData());
 
         async function fetchUserData() {
             showLoading(true);
@@ -254,34 +111,50 @@
                 const data = await res.json();
                 if (data.success) {
                     currentBalance = data.balance;
+                    isVerified = data.isMember;
                     document.getElementById('userBalance').innerText = currentBalance;
+                    
+                    // Update UI based on verification
+                    const vCard = document.getElementById('verificationCard');
+                    if(isVerified) {
+                        vCard.style.display = 'none'; // Hide warning
+                    } else {
+                        vCard.style.display = 'block'; // Show warning
+                    }
                     updateWithdrawBtn();
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
             showLoading(false);
         }
 
         async function fetchTasks() {
+            if(!isVerified) {
+                document.getElementById('taskList').style.display = 'none';
+                document.getElementById('lockedView').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('lockedView').style.display = 'none';
+            document.getElementById('taskList').style.display = 'block';
             showLoading(true);
-            const list = document.getElementById('taskList');
+            
             try {
-                const res = await fetch(`${API_URL}?action=getTasks`);
+                const res = await fetch(`${API_URL}?action=getTasks&userId=${userId}`);
                 const data = await res.json();
+                const list = document.getElementById('taskList');
                 
                 if (data.success && data.tasks.length > 0) {
                     list.innerHTML = data.tasks.map(t => `
-                        <div class="card">
-                            <div class="task-info">
-                                <h4>${t.desc}</h4>
-                                <p>+${t.reward} Coins</p>
+                        <div class="card" id="card-${t.id}">
+                            <div>
+                                <h4 style="margin:0; color:#fff">${t.desc}</h4>
+                                <p style="margin:5px 0 0; color:var(--gold)">+${t.reward}</p>
                             </div>
                             <button id="btn-${t.id}" class="btn" onclick="startTask('${t.id}', '${t.link}', ${t.reward})">Start</button>
                         </div>
                     `).join('');
                 } else {
-                    list.innerHTML = '<p style="text-align:center; color:#555">No tasks available.</p>';
+                    list.innerHTML = '<p style="text-align:center; color:#555">No new tasks available.</p>';
                 }
             } catch (e) { console.error(e); }
             showLoading(false);
@@ -289,79 +162,67 @@
 
         async function fetchLeaderboard() {
             showLoading(true);
-            const list = document.getElementById('leaderboardList');
             try {
                 const res = await fetch(`${API_URL}?action=getLeaderboard`);
                 const data = await res.json();
-                
-                list.innerHTML = data.leaderboard.map((u, i) => `
-                    <div class="leaderboard-item">
-                        <div><span class="rank-badge">#${i+1}</span> ${u.name}</div>
-                        <div style="color:var(--primary)">${u.balance}</div>
+                document.getElementById('leaderboardList').innerHTML = data.leaderboard.map((u, i) => `
+                    <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #222;">
+                        <div><span style="color:var(--gold); width:25px; font-weight:bold">#${i+1}</span> ${u.name}</div>
+                        <div style="color:var(--gold)">${u.balance}</div>
                     </div>
                 `).join('');
             } catch (e) { console.error(e); }
             showLoading(false);
         }
 
-        async function requestWithdraw() {
-            if(currentBalance < 10000) return;
-            
-            if(!confirm("Request withdrawal for " + currentBalance + " coins?")) return;
-
-            showLoading(true);
-            try {
-                const res = await fetch(`${API_URL}?action=withdraw&userId=${userId}&name=${userName}`);
-                const data = await res.json();
-                alert(data.message);
-                fetchUserData(); // Refresh balance
-            } catch (e) { alert("Error connecting to server"); }
-            showLoading(false);
-        }
-
-        // ---------------- LOGIC ----------------
-
+        // Logic
         function startTask(taskId, link, reward) {
             const btn = document.getElementById(`btn-${taskId}`);
-            
-            // 1. Open Link
             window.open(link, '_blank');
-            
-            // 2. Wait state
             btn.disabled = true;
             btn.innerText = "Wait 5s...";
-            
             setTimeout(() => {
-                btn.innerText = "Claim Reward";
+                btn.innerText = "Claim";
                 btn.disabled = false;
                 btn.onclick = () => claimTask(taskId, reward, btn);
             }, 5000);
         }
 
-        async function claimTask(taskId, reward, btnElement) {
-            btnElement.innerText = "Checking...";
-            btnElement.disabled = true;
-
-            // In a real app, you would check if they actually joined via API
-            // Here we trust the click (simulated verification)
+        async function claimTask(taskId, reward, btn) {
+            btn.innerText = "Checking...";
+            btn.disabled = true;
             try {
-                const res = await fetch(`${API_URL}?action=completeTask&userId=${userId}&reward=${reward}`);
+                const res = await fetch(`${API_URL}?action=completeTask&userId=${userId}&taskId=${taskId}&reward=${reward}`);
                 const data = await res.json();
                 if (data.success) {
                     currentBalance = data.newBalance;
                     document.getElementById('userBalance').innerText = currentBalance;
-                    btnElement.innerText = "Done ✅";
+                    document.getElementById(`card-${taskId}`).style.display = 'none'; // Remove from view
                     tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert(`Success! You earned ${reward} coins.`);
+                } else {
+                    alert(data.message); // Already done
+                    document.getElementById(`card-${taskId}`).style.display = 'none';
                 }
-            } catch (e) {
-                btnElement.innerText = "Error";
-            }
+            } catch (e) { btn.innerText = "Error"; }
+        }
+
+        async function requestWithdraw() {
+            if(currentBalance < 10000) return;
+            if(!confirm("Request withdrawal?")) return;
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_URL}?action=withdraw&userId=${userId}&name=${userName}`);
+                const data = await res.json();
+                alert(data.message);
+                fetchUserData();
+            } catch (e) { alert("Error"); }
+            showLoading(false);
         }
 
         function copyReferral() {
-            const link = `https://t.me/YOUR_BOT_USERNAME?start=${userId}`;
-            navigator.clipboard.writeText(link);
-            tg.showAlert("Referral link copied!");
+            navigator.clipboard.writeText(`https://t.me/UjGroup_BOT?start=${userId}`);
+            tg.showAlert("Link copied!");
         }
 
         function updateWithdrawBtn() {
@@ -375,25 +236,15 @@
             }
         }
 
-        // ---------------- UI UTILS ----------------
-
         function switchTab(tabId, navEl) {
-            // Update Nav
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             navEl.classList.add('active');
-            
-            // Update Sections
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-
-            // Load Data
             if(tabId === 'tasks') fetchTasks();
             if(tabId === 'leaderboard') fetchLeaderboard();
         }
-
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
+        function showLoading(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
     </script>
 </body>
 </html>
